@@ -1,0 +1,288 @@
+repeat task.wait() until game:IsLoaded()
+
+-- ================================================
+-- 1. TẠO NÚT TRÒN BẬT / TẮT MENU (TOGGLE BUTTON)
+-- ================================================
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "VNCheatUI_Screen"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local ToggleBtn = Instance.new("ImageButton")
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
+ToggleBtn.Size = UDim2.new(0, 44, 0, 44)
+ToggleBtn.Draggable = true
+ToggleBtn.Image = "rbxassetid://119806186864286" -- 👈 ID Ảnh nút tròn của bạn
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleBtn
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 136, 255)
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = ToggleBtn
+
+-- ================================================
+-- 2. TẠO GIAO DIỆN CHÍNH (VN CHEAT V8 STYLE)
+-- ================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
+MainFrame.Size = UDim2.new(0, 520, 0, 320)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(42, 42, 50)
+MainStroke.Thickness = 1
+MainStroke.Parent = MainFrame
+
+-- --- Topbar (Chuẩn macOS) ---
+local Topbar = Instance.new("Frame")
+Topbar.Name = "Topbar"
+Topbar.Parent = MainFrame
+Topbar.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
+Topbar.BorderSizePixel = 0
+Topbar.Size = UDim2.new(1, 0, 0, 32)
+
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 10)
+TopbarCorner.Parent = Topbar
+
+-- Nút macOS Red/Yellow/Green
+local MacBtns = Instance.new("Frame")
+MacBtns.Parent = Topbar
+MacBtns.BackgroundTransparency = 1
+MacBtns.Position = UDim2.new(0, 10, 0, 10)
+MacBtns.Size = UDim2.new(0, 50, 0, 12)
+
+local function createMacDot(color, pos)
+	local dot = Instance.new("Frame")
+	dot.Parent = MacBtns
+	dot.BackgroundColor3 = color
+	dot.BorderSizePixel = 0
+	dot.Position = UDim2.new(0, pos, 0, 0)
+	dot.Size = UDim2.new(0, 12, 0, 12)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(1, 0)
+	c.Parent = dot
+end
+createMacDot(Color3.fromRGB(255, 95, 86), 0)
+createMacDot(Color3.fromRGB(255, 189, 46), 16)
+createMacDot(Color3.fromRGB(39, 201, 63), 32)
+
+-- Tiêu đề Menu
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = Topbar
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.Size = UDim2.new(1, 0, 1, 0)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "hoanganhvip | vip pro💎😍" -- 👈 Tên & Mô tả chính
+TitleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+TitleLabel.TextSize = 14
+
+-- Bật/tắt ẩn hiện khi bấm nút tròn
+ToggleBtn.MouseButton1Click:Connect(function()
+	MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- ================================================
+-- 3. KHUNG MENU TRÁI (SIDEBAR) & NỘI DUNG PHẢI
+-- ================================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(18, 18, 21)
+Sidebar.BorderSizePixel = 0
+Sidebar.Position = UDim2.new(0, 0, 0, 32)
+Sidebar.Size = UDim2.new(0, 130, 1, -32)
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Parent = Sidebar
+SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Parent = MainFrame
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 135, 0, 37)
+ContentContainer.Size = UDim2.new(1, -140, 1, -42)
+
+-- Quản lý Tab & Chuyển Đổi Tab
+local tabs = {}
+local currentTab = nil
+
+local function createTab(tabName, layoutOrder)
+	-- Nút Tab ở Sidebar
+	local TabBtn = Instance.new("TextButton")
+	TabBtn.Parent = Sidebar
+	TabBtn.BackgroundTransparency = 1
+	TabBtn.Size = UDim2.new(1, 0, 0, 38)
+	TabBtn.Font = Enum.Font.SourceSansSemibold
+	TabBtn.Text = "   " .. tabName
+	TabBtn.TextColor3 = Color3.fromRGB(154, 154, 176)
+	TabBtn.TextSize = 13
+	TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+	TabBtn.LayoutOrder = layoutOrder
+
+	local Indicator = Instance.new("Frame")
+	Indicator.Parent = TabBtn
+	Indicator.BackgroundColor3 = Color3.fromRGB(0, 136, 255)
+	Indicator.BorderSizePixel = 0
+	Indicator.Size = UDim2.new(0, 3, 1, 0)
+	Indicator.Visible = false
+
+	-- Khung chứa nội dung của Tab
+	local TabPage = Instance.new("ScrollingFrame")
+	TabPage.Parent = ContentContainer
+	TabPage.BackgroundTransparency = 1
+	TabPage.Size = UDim2.new(1, 0, 1, 0)
+	TabPage.Visible = false
+	TabPage.ScrollBarThickness = 3
+	TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+	local PageList = Instance.new("UIListLayout")
+	PageList.Parent = TabPage
+	PageList.SortOrder = Enum.SortOrder.LayoutOrder
+	PageList.Padding = UDim.new(0, 6)
+
+	PageList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		TabPage.CanvasSize = UDim2.new(0, 0, 0, PageList.AbsoluteContentSize.Y + 10)
+	end)
+
+	TabBtn.MouseButton1Click:Connect(function()
+		for _, t in pairs(tabs) do
+			t.Page.Visible = false
+			t.Btn.TextColor3 = Color3.fromRGB(154, 154, 176)
+			t.Indicator.Visible = false
+		end
+		TabPage.Visible = true
+		TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Indicator.Visible = true
+	end)
+
+	local tabData = {Btn = TabBtn, Page = TabPage, Indicator = Indicator}
+	table.insert(tabs, tabData)
+
+	-- Mặc định chọn Tab đầu tiên
+	if #tabs == 1 then
+		TabPage.Visible = true
+		TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Indicator.Visible = true
+	end
+
+	return TabPage
+end
+
+-- Hàm Thêm Nút Bấm Thực Thi (Action Button)
+local function addScriptButton(tabPage, title, description, callback)
+	local ItemFrame = Instance.new("Frame")
+	ItemFrame.Parent = tabPage
+	ItemFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+	ItemFrame.BorderSizePixel = 0
+	ItemFrame.Size = UDim2.new(1, -6, 0, 48)
+
+	local ItemCorner = Instance.new("UICorner")
+	ItemCorner.CornerRadius = UDim.new(0, 6)
+	ItemCorner.Parent = ItemFrame
+
+	local TitleLbl = Instance.new("TextLabel")
+	TitleLbl.Parent = ItemFrame
+	TitleLbl.BackgroundTransparency = 1
+	TitleLbl.Position = UDim2.new(0, 10, 0, 6)
+	TitleLbl.Size = UDim2.new(0.7, 0, 0, 18)
+	TitleLbl.Font = Enum.Font.SourceSansBold
+	TitleLbl.Text = title
+	TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TitleLbl.TextSize = 13
+	TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+	local DescLbl = Instance.new("TextLabel")
+	DescLbl.Parent = ItemFrame
+	DescLbl.BackgroundTransparency = 1
+	DescLbl.Position = UDim2.new(0, 10, 0, 24)
+	DescLbl.Size = UDim2.new(0.7, 0, 0, 16)
+	DescLbl.Font = Enum.Font.SourceSans
+	DescLbl.Text = description or ""
+	DescLbl.TextColor3 = Color3.fromRGB(150, 150, 160)
+	DescLbl.TextSize = 11
+	DescLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+	local RunBtn = Instance.new("TextButton")
+	RunBtn.Parent = ItemFrame
+	RunBtn.BackgroundColor3 = Color3.fromRGB(0, 136, 255)
+	RunBtn.BorderSizePixel = 0
+	RunBtn.Position = UDim2.new(1, -70, 0, 10)
+	RunBtn.Size = UDim2.new(0, 60, 0, 28)
+	RunBtn.Font = Enum.Font.SourceSansBold
+	RunBtn.Text = "Chạy"
+	RunBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	RunBtn.TextSize = 12
+
+	local BtnCorner = Instance.new("UICorner")
+	BtnCorner.CornerRadius = UDim.new(0, 4)
+	BtnCorner.Parent = RunBtn
+
+	RunBtn.MouseButton1Click:Connect(function()
+		pcall(callback)
+	end)
+end
+
+-- ================================================
+-- 4. TẢI TOÀN BỘ TẬP DỮ LIỆU TỪ TÉO HUB CỦA BẠN
+-- ================================================
+
+-- Tab 1: admin
+local Tab1 = createTab("admin", 1)
+addScriptButton(Tab1, "hoanganh", "oách xà lách vô cùng", function()
+	setclipboard("https://www.tiktok.com/@jannie3342?_t=ZS-90QsJQ5j0NO&_r=1")
+end)
+addScriptButton(Tab1, "NGUYENHOANGANH", "làm chơi thui", function()
+	setclipboard("https://www.tiktok.com/@b.yt03?_t=ZS-90QsHokNlwN&_r=1")
+end)
+addScriptButton(Tab1, "tiktok", "fl tiktok để biết thêm nhiều script", function()
+	setclipboard("https://www.tiktok.com/@b.yt03?_t=ZS-90QsHmSjaiu&_r=1")
+end)
+
+-- Tab 2: brookhaven
+local Tab2 = createTab("brookhaven", 2)
+addScriptButton(Tab2, "coquette", "script này ngon á đủ chức năng cả😃", function()
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-Coquette-Hub-Remake-133562"))()
+end)
+addScriptButton(Tab2, "kitk4t", "script này ngon á đủ chức năng cả😃", function()
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-KitK4t-Hub-137923"))()
+end)
+addScriptButton(Tab2, "sandeXY", "script này ngon á đủ chức năng cả😃", function()
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-Sander-XY-35845"))()
+end)
+
+-- Tab 3: grow a garden 2
+local Tab3 = createTab("grow a garden 2", 3)
+addScriptButton(Tab3, "teddyhub", "script này ngon á đủ chức năng cả😃", function()
+	repeat task.wait() until game:IsLoaded() and game:GetService("Players") and game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Bubu2k/robloxscript/refs/heads/main/teddysytimh20.lua"))()
+end)
+
+-- Tab 4: 99 đêm🥷
+local Tab4 = createTab("99 đêm🥷", 4)
+
+-- Tab 5: blox fruit🍎
+local Tab5 = createTab("blox fruit🍎", 5)
+
+-- Tab 6: plan vs branro🌲🐘t
+local Tab6 = createTab("plan vs branro🌲🐘t", 6)
