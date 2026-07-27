@@ -1,0 +1,123 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Variables
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- Cấu hình Camlock
+local isLocked = false
+local targetPart = nil 
+local lockKey = Enum.KeyCode.Q -- Phím tắt bàn phím
+local smoothFactor = 0.2 -- Độ mượt khi xoay camera
+
+-- ==================== TẠO GIAO DIỆN LOGO ====================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CamlockUI"
+screenGui.ResetOnSpawn = false
+-- Thêm vào CoreGui hoặc PlayerGui tùy ý (dùng PlayerGui cho an toàn)
+screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0, 60, 0, 60)
+toggleButton.Position = UDim2.new(0.85, 0, 0.75, 0) -- Vị trí ở góc dưới màn hình
+toggleButton.AnchorPoint = Vector2.new(0.5, 0.5)
+toggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+toggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.BorderSizePixel = 2
+toggleButton.Text = "OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+toggleButton.TextSize = 16
+toggleButton.Font = Enum.Font.GothamBold
+
+-- Làm tròn góc logo
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(1, 0) -- Tạo hình tròn
+uiCorner.Parent = toggleButton
+
+-- ==================== HÀM LOGIC CAMLOCK ====================
+local function getClosestTarget()
+	local closestPart = nil
+	local shortestDistance = math.huge
+	local mouse = localPlayer:GetMouse()
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+			local humanoid = player.Character.Humanoid
+			local head = player.Character:FindFirstChild("Head")
+			
+			if humanoid.Health > 0 and head then
+				local screenPoint, onScreen = camera:WorldToScreenPoint(head.Position)
+				if onScreen then
+					local mousePos = Vector2.new(mouse.X, mouse.Y)
+					local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+					
+					if distance < shortestDistance and distance < 200 then -- Bán kính bắt mục tiêu
+						shortestDistance = distance
+						closestPart = head
+					end
+				end
+			end
+		end
+	end
+	
+	return closestPart
+end
+
+local function toggleCamlock()
+	isLocked = not isLocked
+	if isLocked then
+		targetPart = getClosestTarget()
+		if targetPart then
+			toggleButton.Text = "ON"
+			toggleButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+			toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+		else
+			isLocked = false
+			toggleButton.Text = "OFF"
+			toggleButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+			toggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+		end
+	else
+		targetPart = nil
+		toggleButton.Text = "OFF"
+		toggleButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+		toggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	end
+end
+
+-- Sự kiện nhấn vào Logo trên màn hình
+toggleButton.MouseButton1Click:Connect(function()
+	toggleCamlock()
+end)
+
+-- Sự kiện nhấn phím Q trên bàn phím
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == lockKey then
+		toggleCamlock()
+	end
+end)
+
+-- Cập nhật góc nhìn camera liên tục
+RunService.RenderStepped:Connect(function()
+	if isLocked and targetPart and targetPart.Parent then
+		local humanoid = targetPart.Parent:FindFirstChild("Humanoid")
+		if humanoid and humanoid.Health > 0 then
+			local currentCFrame = camera.CFrame
+			local targetCFrame = CFrame.new(currentCFrame.Position, targetPart.Position)
+			camera.CFrame = currentCFrame:Lerp(targetCFrame, smoothFactor)
+		else
+			-- Mục tiêu chết thì tự động tắt
+			isLocked = false
+			targetPart = nil
+			toggleButton.Text = "OFF"
+			toggleButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+			toggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+		end
+	end
+end)
