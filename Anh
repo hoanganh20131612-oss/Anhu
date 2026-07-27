@@ -1,0 +1,143 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Bảng lưu trữ ESP của từng người chơi
+local ESP_Storage = {}
+
+local function createESP(player)
+    if player == LocalPlayer then return end
+
+    local esp = {
+        Box = Drawing.new("Square"),
+        BoxOutline = Drawing.new("Square"),
+        HealthBarBG = Drawing.new("Square"),
+        HealthBar = Drawing.new("Square"),
+        Name = Drawing.new("Text")
+    }
+
+    -- Cấu hình viền đen cho Khung (Box Outline)
+    esp.BoxOutline.Color = Color3.fromRGB(0, 0, 0)
+    esp.BoxOutline.Thickness = 3
+    esp.BoxOutline.Filled = false
+    esp.BoxOutline.Visible = false
+
+    -- Cấu hình Khung chính (Box)
+    esp.Box.Color = Color3.fromRGB(255, 255, 255)
+    esp.Box.Thickness = 1
+    esp.Box.Filled = false
+    esp.Box.Visible = false
+
+    -- Cấu hình Nền thanh máu (HealthBar BG)
+    esp.HealthBarBG.Color = Color3.fromRGB(0, 0, 0)
+    esp.HealthBarBG.Thickness = 1
+    esp.HealthBarBG.Filled = true
+    esp.HealthBarBG.Visible = false
+
+    -- Cấu hình Thanh máu chính (HealthBar)
+    esp.HealthBar.Color = Color3.fromRGB(0, 255, 0)
+    esp.HealthBar.Thickness = 1
+    esp.HealthBar.Filled = true
+    esp.HealthBar.Visible = false
+
+    -- Cấu hình Tên (Name)
+    esp.Name.Color = Color3.fromRGB(255, 255, 255)
+    esp.Name.Size = 14
+    esp.Name.Center = true
+    esp.Name.Outline = true
+    esp.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
+    esp.Name.Visible = false
+
+    ESP_Storage[player] = esp
+end
+
+local function removeESP(player)
+    if ESP_Storage[player] then
+        for _, drawing in pairs(ESP_Storage[player]) do
+            drawing:Remove()
+        end
+        ESP_Storage[player] = nil
+    end
+end
+
+-- Tạo ESP cho các player đã có sẵn & player mới vào game
+for _, player in pairs(Players:GetPlayers()) do
+    createESP(player)
+end
+Players.PlayerAdded:Connect(createESP)
+Players.PlayerRemoving:Connect(removeESP)
+
+-- Cập nhật vị trí và kích thước ESP mỗi frame
+RunService.RenderStepped:Connect(function()
+    for player, esp in pairs(ESP_Storage) do
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+        if character and humanoid and hrp and humanoid.Health > 0 then
+            -- Tính toán Bounding Box theo kích thước thực tế của nhân vật
+            local cframe, size = character:GetBoundingBox()
+            
+            -- Chuyển tọa độ 3D của vị trí cao nhất (đầu) và thấp nhất (chân) sang màn hình 2D
+            local topPos, topOnScreen = Camera:WorldToViewportPoint(cframe.Position + Vector3.new(0, size.Y / 2, 0))
+            local bottomPos, bottomOnScreen = Camera:WorldToViewportPoint(cframe.Position - Vector3.new(0, size.Y / 2, 0))
+
+            if topOnScreen and bottomOnScreen then
+                -- Tính kích thước Khung theo nhân vật trên màn hình
+                local boxHeight = math.abs(topPos.Y - bottomPos.Y)
+                local boxWidth = boxHeight * 0.65 -- Tỉ lệ chiều rộng/chiều cao chuẩn cho nhân vật Roblox
+
+                local boxPosition = Vector2.new(topPos.X - (boxWidth / 2), topPos.Y)
+
+                -- 1. Cập nhật Khung Viền Đen
+                esp.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
+                esp.BoxOutline.Position = boxPosition
+                esp.BoxOutline.Visible = true
+
+                -- 2. Cập nhật Khung Trắng
+                esp.Box.Size = Vector2.new(boxWidth, boxHeight)
+                esp.Box.Position = boxPosition
+                esp.Box.Visible = true
+
+                -- 3. Cập nhật Thanh Máu (Nằm sát mép trái của Khung)
+                local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                local barWidth = 3
+                local barOffset = 5
+
+                -- Nền thanh máu
+                esp.HealthBarBG.Size = Vector2.new(barWidth, boxHeight)
+                esp.HealthBarBG.Position = Vector2.new(boxPosition.X - barWidth - barOffset, boxPosition.Y)
+                esp.HealthBarBG.Visible = true
+
+                -- Thanh máu thực tế (giảm dần từ trên xuống)
+                local currentBarHeight = boxHeight * healthPercent
+                esp.HealthBar.Size = Vector2.new(barWidth, currentBarHeight)
+                esp.HealthBar.Position = Vector2.new(boxPosition.X - barWidth - barOffset, boxPosition.Y + (boxHeight - currentBarHeight))
+                
+                -- Đổi màu thanh máu theo lượng máu (Xanh lá -> Vàng -> Đỏ)
+                esp.HealthBar.Color = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+                esp.HealthBar.Visible = true
+
+                -- 4. Cập nhật Tên (Hiển thị ngay trên đỉnh Khung)
+                esp.Name.Text = player.DisplayName
+                esp.Name.Position = Vector2.new(topPos.X, boxPosition.Y - 18)
+                esp.Name.Visible = true
+            else
+                -- Ẩn khi nhân vật ở phía sau màn hình
+                esp.Box.Visible = false
+                esp.BoxOutline.Visible = false
+                esp.HealthBar.Visible = false
+                esp.HealthBarBG.Visible = false
+                esp.Name.Visible = false
+            end
+        else
+            -- Ẩn khi nhân vật chết hoặc chưa load xong
+            esp.Box.Visible = false
+            esp.BoxOutline.Visible = false
+            esp.HealthBar.Visible = false
+            esp.HealthBarBG.Visible = false
+            esp.Name.Visible = false
+        end
+    end
+end)
