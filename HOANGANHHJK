@@ -1,0 +1,209 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Trạng thái ESP (Mặc định BẬT -> Nút màu ĐỎ)
+local ESP_Enabled = true
+
+-- Bảng lưu trữ ESP
+local ESP_Storage = {}
+
+-- ================================================
+-- 1. TẠO LOGO CHỮ NHẬT NHỎ BO TRÒN TRÊN MÀN HÌNH
+-- ================================================
+local CoreGui = game:GetService("CoreGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ESP_Toggle_Screen"
+ScreenGui.Parent = CoreGui
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ESPToggleBtn"
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(230, 40, 40) -- BẬT: Đỏ
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Position = UDim2.new(0.02, 0, 0.3, 0)
+ToggleBtn.Size = UDim2.new(0, 65, 0, 28)
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.Text = "ESP: ON"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 13
+ToggleBtn.Draggable = true
+ToggleBtn.Active = true
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 8)
+BtnCorner.Parent = ToggleBtn
+
+local BtnStroke = Instance.new("UIStroke")
+BtnStroke.Color = Color3.fromRGB(255, 255, 255)
+BtnStroke.Thickness = 1.5
+BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+BtnStroke.Parent = ToggleBtn
+
+-- Cập nhật màu nút ESP
+local function updateToggleButton()
+    if ESP_Enabled then
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(230, 40, 40) -- BẬT = ĐỎ
+        ToggleBtn.Text = "ESP: ON"
+    else
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 70) -- TẮT = XANH LÁ
+        ToggleBtn.Text = "ESP: OFF"
+    end
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    ESP_Enabled = not ESP_Enabled
+    updateToggleButton()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
+        ESP_Enabled = not ESP_Enabled
+        updateToggleButton()
+    end
+end)
+
+-- ================================================
+-- 2. HÀM TẠO VÀ XÓA ESP DRAWING
+-- ================================================
+local function createESP(player)
+    if player == LocalPlayer then return end
+
+    local esp = {
+        Box = Drawing.new("Square"),
+        BoxOutline = Drawing.new("Square"),
+        HealthBarBG = Drawing.new("Square"),
+        HealthBar = Drawing.new("Square"),
+        Name = Drawing.new("Text"),
+        Tracer = Drawing.new("Line")
+    }
+
+    -- Viền đen hỗ trợ nhìn rõ
+    esp.BoxOutline.Color = Color3.fromRGB(0, 0, 0)
+    esp.BoxOutline.Thickness = 3
+    esp.BoxOutline.Filled = false
+    esp.BoxOutline.Visible = false
+
+    -- ⚪ Khung chính (Box): MÀU TRẮNG
+    esp.Box.Color = Color3.fromRGB(255, 255, 255)
+    esp.Box.Thickness = 1
+    esp.Box.Filled = false
+    esp.Box.Visible = false
+
+    -- Nền thanh máu
+    esp.HealthBarBG.Color = Color3.fromRGB(0, 0, 0)
+    esp.HealthBarBG.Thickness = 1
+    esp.HealthBarBG.Filled = true
+    esp.HealthBarBG.Visible = false
+
+    -- 🟢 Thanh máu chính: MÀU XANH LÁ
+    esp.HealthBar.Color = Color3.fromRGB(0, 255, 0)
+    esp.HealthBar.Thickness = 1
+    esp.HealthBar.Filled = true
+    esp.HealthBar.Visible = false
+
+    -- Tên người chơi
+    esp.Name.Color = Color3.fromRGB(255, 255, 255)
+    esp.Name.Size = 14
+    esp.Name.Center = true
+    esp.Name.Outline = true
+    esp.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
+    esp.Name.Visible = false
+
+    -- ⚪ Tia Line (Tracer): MÀU TRẮNG
+    esp.Tracer.Color = Color3.fromRGB(255, 255, 255)
+    esp.Tracer.Thickness = 1
+    esp.Tracer.Transparency = 1
+    esp.Tracer.Visible = false
+
+    ESP_Storage[player] = esp
+end
+
+local function removeESP(player)
+    if ESP_Storage[player] then
+        for _, drawing in pairs(ESP_Storage[player]) do
+            drawing:Remove()
+        end
+        ESP_Storage[player] = nil
+    end
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    createESP(player)
+end
+Players.PlayerAdded:Connect(createESP)
+Players.PlayerRemoving:Connect(removeESP)
+
+-- ================================================
+-- 3. CẬP NHẬT ESP MỖI FRAME
+-- ================================================
+RunService.RenderStepped:Connect(function()
+    for player, esp in pairs(ESP_Storage) do
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+        if not ESP_Enabled or not (character and humanoid and hrp and humanoid.Health > 0) then
+            esp.Box.Visible = false
+            esp.BoxOutline.Visible = false
+            esp.HealthBar.Visible = false
+            esp.HealthBarBG.Visible = false
+            esp.Name.Visible = false
+            esp.Tracer.Visible = false
+        else
+            local cframe, size = character:GetBoundingBox()
+            
+            local topPos, topOnScreen = Camera:WorldToViewportPoint(cframe.Position + Vector3.new(0, size.Y / 2, 0))
+            local bottomPos, bottomOnScreen = Camera:WorldToViewportPoint(cframe.Position - Vector3.new(0, size.Y / 2, 0))
+
+            if topOnScreen and bottomOnScreen then
+                local boxHeight = math.abs(topPos.Y - bottomPos.Y)
+                local boxWidth = boxHeight * 0.65
+                local boxPosition = Vector2.new(topPos.X - (boxWidth / 2), topPos.Y)
+
+                -- 1. Viền đen & Khung Trắng
+                esp.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
+                esp.BoxOutline.Position = boxPosition
+                esp.BoxOutline.Visible = true
+
+                esp.Box.Size = Vector2.new(boxWidth, boxHeight)
+                esp.Box.Position = boxPosition
+                esp.Box.Visible = true
+
+                -- 2. Thanh Máu Xanh Lá
+                local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                local barWidth = 3
+                local barOffset = 5
+
+                esp.HealthBarBG.Size = Vector2.new(barWidth, boxHeight)
+                esp.HealthBarBG.Position = Vector2.new(boxPosition.X - barWidth - barOffset, boxPosition.Y)
+                esp.HealthBarBG.Visible = true
+
+                local currentBarHeight = boxHeight * healthPercent
+                esp.HealthBar.Size = Vector2.new(barWidth, currentBarHeight)
+                esp.HealthBar.Position = Vector2.new(boxPosition.X - barWidth - barOffset, boxPosition.Y + (boxHeight - currentBarHeight))
+                esp.HealthBar.Color = Color3.fromRGB(0, 255, 0) -- Giữ chuẩn màu Xanh Lá
+                esp.HealthBar.Visible = true
+
+                -- 3. Tên người chơi
+                esp.Name.Text = player.DisplayName
+                esp.Name.Position = Vector2.new(topPos.X, boxPosition.Y - 18)
+                esp.Name.Visible = true
+
+                -- 4. Tia Line Trắng
+                esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                esp.Tracer.To = Vector2.new(bottomPos.X, bottomPos.Y)
+                esp.Tracer.Visible = true
+            else
+                esp.Box.Visible = false
+                esp.BoxOutline.Visible = false
+                esp.HealthBar.Visible = false
+                esp.HealthBarBG.Visible = false
+                esp.Name.Visible = false
+                esp.Tracer.Visible = false
+            end
+        end
+    end
+end)
