@@ -1,0 +1,302 @@
+repeat task.wait() until game:IsLoaded()
+
+local CoreGui = game:GetService("CoreGui")
+
+if CoreGui:FindFirstChild("VNCheat_VIP_UI") then
+    CoreGui:FindFirstChild("VNCheat_VIP_UI"):Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "VNCheat_VIP_UI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+
+-- ================================================
+-- 1. BẢNG KEY (KEY SYSTEM)
+-- ================================================
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Name = "KeyFrame"
+KeyFrame.Parent = ScreenGui
+KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+KeyFrame.Position = UDim2.new(0.5, -140, 0.5, -75)
+KeyFrame.Size = UDim2.new(0, 280, 0, 150)
+KeyFrame.Active = true
+
+local KeyCorner = Instance.new("UICorner")
+KeyCorner.CornerRadius = UDim.new(0, 8)
+KeyCorner.Parent = KeyFrame
+
+local KeyStroke = Instance.new("UIStroke")
+KeyStroke.Color = Color3.fromRGB(0, 162, 255)
+KeyStroke.Thickness = 1.5
+KeyStroke.Parent = KeyFrame
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Parent = KeyFrame
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Position = UDim2.new(0, 0, 0, 12)
+KeyTitle.Size = UDim2.new(1, 0, 0, 22)
+KeyTitle.Font = Enum.Font.SourceSansBold
+KeyTitle.Text = "NHẬP KEY ĐỂ KÍCH HOẠT"
+KeyTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+KeyTitle.TextSize = 15
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Parent = KeyFrame
+KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+KeyInput.BorderSizePixel = 0
+KeyInput.Position = UDim2.new(0.1, 0, 0.38, 0)
+KeyInput.Size = UDim2.new(0.8, 0, 0, 32)
+KeyInput.Font = Enum.Font.SourceSans
+KeyInput.PlaceholderText = "Nhập key..."
+KeyInput.Text = ""
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.TextSize = 13
+
+local KeyInputCorner = Instance.new("UICorner")
+KeyInputCorner.CornerRadius = UDim.new(0, 6)
+KeyInputCorner.Parent = KeyInput
+
+local SubmitKeyBtn = Instance.new("TextButton")
+SubmitKeyBtn.Parent = KeyFrame
+SubmitKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+SubmitKeyBtn.BorderSizePixel = 0
+SubmitKeyBtn.Position = UDim2.new(0.2, 0, 0.70, 0)
+SubmitKeyBtn.Size = UDim2.new(0.6, 0, 0, 30)
+SubmitKeyBtn.Font = Enum.Font.SourceSansBold
+SubmitKeyBtn.Text = "XÁC NHẬN"
+SubmitKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitKeyBtn.TextSize = 13
+
+local SubmitCorner = Instance.new("UICorner")
+SubmitCorner.CornerRadius = UDim.new(0, 6)
+SubmitCorner.Parent = SubmitKeyBtn
+
+-- ================================================
+-- 2. KHUNG MENU CHÍNH (MAC OS STYLE)
+-- ================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -240, 0.5, -135)
+MainFrame.Size = UDim2.new(0, 480, 0, 270)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Topbar
+local MacDots = Instance.new("Frame")
+MacDots.Parent = MainFrame
+MacDots.BackgroundTransparency = 1
+MacDots.Position = UDim2.new(0, 10, 0, 8)
+MacDots.Size = UDim2.new(0, 50, 0, 15)
+
+local dotColors = {Color3.fromRGB(255, 95, 87), Color3.fromRGB(255, 189, 46), Color3.fromRGB(40, 201, 64)}
+for i, col in ipairs(dotColors) do
+    local dot = Instance.new("Frame")
+    dot.Parent = MacDots
+    dot.BackgroundColor3 = col
+    dot.Position = UDim2.new(0, (i - 1) * 14, 0, 2)
+    dot.Size = UDim2.new(0, 10, 0, 10)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(1, 0)
+    c.Parent = dot
+end
+
+local TitleHeader = Instance.new("TextLabel")
+TitleHeader.Parent = MainFrame
+TitleHeader.BackgroundTransparency = 1
+TitleHeader.Position = UDim2.new(0, 0, 0, 4)
+TitleHeader.Size = UDim2.new(1, 0, 0, 20)
+TitleHeader.Font = Enum.Font.SourceSansBold
+TitleHeader.Text = "VN CHEAT V8"
+TitleHeader.TextColor3 = Color3.fromRGB(255, 215, 0)
+TitleHeader.TextSize = 13
+
+local PowerBtn = Instance.new("TextButton")
+PowerBtn.Parent = MainFrame
+PowerBtn.BackgroundTransparency = 1
+PowerBtn.Position = UDim2.new(1, -25, 0, 4)
+PowerBtn.Size = UDim2.new(0, 20, 0, 20)
+PowerBtn.Font = Enum.Font.SourceSansBold
+PowerBtn.Text = "⏻"
+PowerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+PowerBtn.TextSize = 14
+
+PowerBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+SubmitKeyBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == "RINHKT" then
+        KeyFrame:Destroy()
+        MainFrame.Visible = true
+    else
+        SubmitKeyBtn.Text = "Key Sai!"
+        SubmitKeyBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+        task.wait(1.5)
+        SubmitKeyBtn.Text = "XÁC NHẬN"
+        SubmitKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+    end
+end)
+
+-- ================================================
+-- 3. SIDEBAR VÀ CÁC TAB NỘI DUNG
+-- ================================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Parent = MainFrame
+Sidebar.BackgroundColor3 = Color3.fromRGB(32, 32, 35)
+Sidebar.BorderSizePixel = 0
+Sidebar.Position = UDim2.new(0, 0, 0, 28)
+Sidebar.Size = UDim2.new(0, 100, 1, -28)
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Parent = Sidebar
+SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarList.Padding = UDim.new(0, 2)
+
+local ContentArea = Instance.new("Frame")
+ContentArea.Parent = MainFrame
+ContentArea.BackgroundTransparency = 1
+ContentArea.Position = UDim2.new(0, 105, 0, 28)
+ContentArea.Size = UDim2.new(1, -110, 1, -28)
+
+local tabs = {}
+
+local function createTab(tabName, layoutOrder)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Parent = Sidebar
+    TabBtn.BackgroundTransparency = 1
+    TabBtn.Size = UDim2.new(1, 0, 0, 32)
+    TabBtn.Font = Enum.Font.SourceSans
+    TabBtn.Text = tabName
+    TabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    TabBtn.TextSize = 12
+    TabBtn.LayoutOrder = layoutOrder
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Parent = ContentArea
+    Page.BackgroundTransparency = 1
+    Page.Position = UDim2.new(0, 0, 0, 5)
+    Page.Size = UDim2.new(1, 0, 1, -5)
+    Page.Visible = false
+    Page.ScrollBarThickness = 2
+    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+    local PageList = Instance.new("UIListLayout")
+    PageList.Parent = Page
+    PageList.SortOrder = Enum.SortOrder.LayoutOrder
+    PageList.Padding = UDim.new(0, 6)
+
+    PageList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, PageList.AbsoluteContentSize.Y + 10)
+    end)
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(tabs) do
+            t.Page.Visible = false
+            t.Btn.BackgroundColor3 = Color3.fromRGB(32, 32, 35)
+            t.Btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+            t.Btn.BackgroundTransparency = 1
+        end
+        Page.Visible = true
+        TabBtn.BackgroundTransparency = 0
+        TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    local data = {Btn = TabBtn, Page = Page}
+    table.insert(tabs, data)
+
+    if #tabs == 1 then
+        Page.Visible = true
+        TabBtn.BackgroundTransparency = 0
+        TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+
+    return Page
+end
+
+-- Hàm tạo các dòng nút bấm đồng nhất chuẩn mẫu ESP
+local function addScriptBtn(page, title, subTitle, callback)
+    local RowFrame = Instance.new("Frame")
+    RowFrame.Parent = page
+    RowFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
+    RowFrame.BorderSizePixel = 0
+    RowFrame.Size = UDim2.new(1, -10, 0, 48)
+
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 6)
+    RowCorner.Parent = RowFrame
+
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Parent = RowFrame
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Position = UDim2.new(0, 10, 0, 6)
+    TitleLabel.Size = UDim2.new(1, -100, 0, 18)
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextSize = 13
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    local SubLabel = Instance.new("TextLabel")
+    SubLabel.Parent = RowFrame
+    SubLabel.BackgroundTransparency = 1
+    SubLabel.Position = UDim2.new(0, 10, 0, 24)
+    SubLabel.Size = UDim2.new(1, -100, 0, 16)
+    SubLabel.Font = Enum.Font.SourceSans
+    SubLabel.Text = subTitle
+    SubLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    SubLabel.TextSize = 11
+    SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    local ActionBtn = Instance.new("TextButton")
+    ActionBtn.Parent = RowFrame
+    ActionBtn.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+    ActionBtn.BorderSizePixel = 0
+    ActionBtn.Position = UDim2.new(1, -85, 0.5, -14)
+    ActionBtn.Size = UDim2.new(0, 75, 0, 28)
+    ActionBtn.Font = Enum.Font.SourceSansBold
+    ActionBtn.Text = "Chạy"
+    ActionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ActionBtn.TextSize = 12
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 4)
+    BtnCorner.Parent = ActionBtn
+
+    ActionBtn.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+end
+
+-- ================================================
+-- 4. TẠO CÁC TAB VÀ THÊM SCRIPT NỐI TRỰC TIẾP
+-- ================================================
+local TabAim = createTab("Aim", 1)
+local TabEsp = createTab("Esp", 2)
+local TabAccount = createTab("Account", 3)
+
+-- Tab Aim
+addScriptBtn(TabAim, "Chạy AIMPRO (Auto Aim)", "Khóa tầm vào người chơi", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanganh20131612-oss/Anhu/refs/heads/main/Qetuopphssfjghfyfucgc", true))()
+end)
+
+-- Tab Esp
+addScriptBtn(TabEsp, "Kích hoạt ESP Vị Trí", "Hiển thị khung người chơi xung quanh", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanganh20131612-oss/Anhu/refs/heads/main/HOANGANHHJK", true))()
+end)
+
+-- Tab Account
+addScriptBtn(TabAccount, "TikTok Hoàng Anh", "Sao chép liên kết mạng xã hội", function()
+    setclipboard("https://www.tiktok.com/@jannie3342?_t=ZS-90QsJQ5j0NO&_r=1")
+end)
