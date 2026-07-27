@@ -1,0 +1,76 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- ================================================
+-- 1. CẤU HÌNH CÓ THỂ TÙY CHỈNH (VARIABLES)
+-- ================================================
+_G.AimlockEnabled = true   -- Bật/Tắt Aimlock (true/false)
+_G.ShowFOV = true          -- Hiển thị vòng FOV (true/false)
+_G.FOVSize = 150           -- Bán kính vòng FOV (Chỉnh tùy thích: 50, 100, 200, 300...)
+_G.TargetPart = "Head"     -- Vị trí khóa tâm ("Head" hoặc "HumanoidRootPart")
+_G.Smoothness = 0.25       -- Độ mượt khi lia tâm (từ 0.01 mượt nhẹ đến 1 khóa cứng)
+
+-- ================================================
+-- 2. KHỞI TẠO VÒNG TRÒN FOV (DRAWING API)
+-- ================================================
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.5
+FOVCircle.Color = Color3.fromRGB(0, 170, 255) -- Màu xanh lam (R, G, B)
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1
+FOVCircle.NumSides = 60
+
+-- Cập nhật vòng FOV theo tâm màn hình liên tục
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    FOVCircle.Radius = _G.FOVSize
+    FOVCircle.Visible = _G.ShowFOV
+end)
+
+-- ================================================
+-- 3. HÀM TÌM KẺ ĐỊCH TRONG VÒNG FOV
+-- ================================================
+local function getClosestPlayerInFOV()
+    local closestPlayer = nil
+    local shortestDistance = _G.FOVSize
+    local centerPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(_G.TargetPart) and player.Character:FindFirstChild("Humanoid") then
+            if player.Character.Humanoid.Health > 0 then
+                local targetPart = player.Character[_G.TargetPart]
+                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+
+                if onScreen then
+                    local targetVector = Vector2.new(screenPos.X, screenPos.Y)
+                    local distance = (targetVector - centerPos).Magnitude
+
+                    -- Chỉ chọn mục tiêu nằm trong bán kính vòng FOV
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        closestPlayer = player
+                    end
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+-- ================================================
+-- 4. VÒNG LẶP KHÓA TÂM (AIMLOCK LOOP)
+-- ================================================
+RunService.RenderStepped:Connect(function()
+    if _G.AimlockEnabled then
+        local target = getClosestPlayerInFOV()
+        if target and target.Character and target.Character:FindFirstChild(_G.TargetPart) then
+            local targetPos = target.Character[_G.TargetPart].Position
+            -- Mượt mà hướng Camera về mục tiêu bằng Lerp
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), _G.Smoothness)
+        end
+    end
+end)
