@@ -1,0 +1,147 @@
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+-- Trạng thái
+local AIM_Enabled = true
+local FOV_Radius = 100 -- Bán kính vòng FOV mặc định
+
+-- ================================================
+-- 1. TẠO VÒNG TRÒN FOV (DRAWING)
+-- ================================================
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Color = Color3.fromRGB(255, 255, 255) -- Màu trắng
+FOVCircle.Thickness = 1.5
+FOVCircle.NumSides = 60
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1
+FOVCircle.Visible = true
+FOVCircle.Radius = FOV_Radius
+
+-- Cập nhật tâm vòng FOV luôn ở giữa màn hình
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    FOVCircle.Radius = FOV_Radius
+    FOVCircle.Visible = AIM_Enabled
+end)
+
+-- ================================================
+-- 2. TẠO GIAO DIỆN NÚT AIM & NÚT CHỈNH FOV
+-- ================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AIM_FOV_Screen"
+ScreenGui.Parent = CoreGui
+
+-- Nút AIM Toggle (Lớn hơn nút ESP)
+local AimToggleBtn = Instance.new("TextButton")
+AimToggleBtn.Name = "AimToggleBtn"
+AimToggleBtn.Parent = ScreenGui
+AimToggleBtn.BackgroundColor3 = Color3.fromRGB(230, 40, 40) -- BẬT = Đỏ
+AimToggleBtn.BorderSizePixel = 0
+AimToggleBtn.Position = UDim2.new(0.02, 0, 0.38, 0)
+AimToggleBtn.Size = UDim2.new(0, 85, 0, 34)
+AimToggleBtn.Font = Enum.Font.SourceSansBold
+AimToggleBtn.Text = "AIM: ON"
+AimToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimToggleBtn.TextSize = 14
+AimToggleBtn.Draggable = true
+AimToggleBtn.Active = true
+
+local AimCorner = Instance.new("UICorner")
+AimCorner.CornerRadius = UDim.new(0, 8)
+AimCorner.Parent = AimToggleBtn
+
+local AimStroke = Instance.new("UIStroke")
+AimStroke.Color = Color3.fromRGB(255, 255, 255)
+AimStroke.Thickness = 1.5
+AimStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+AimStroke.Parent = AimToggleBtn
+
+-- --- KHUNG ĐIỀU CHỈNH KÍCH THƯỚC FOV ---
+local FovFrame = Instance.new("Frame")
+FovFrame.Name = "FovFrame"
+FovFrame.Parent = ScreenGui
+FovFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+FovFrame.BorderSizePixel = 0
+FovFrame.Position = UDim2.new(0.02, 0, 0.44, 0) -- Nằm ngay dưới nút AIM
+FovFrame.Size = UDim2.new(0, 110, 0, 32)
+
+local FovCorner = Instance.new("UICorner")
+FovCorner.CornerRadius = UDim.new(0, 6)
+FovCorner.Parent = FovFrame
+
+local FovStroke = Instance.new("UIStroke")
+FovStroke.Color = Color3.fromRGB(60, 60, 75)
+FovStroke.Thickness = 1
+FovStroke.Parent = FovFrame
+
+-- Chữ hiển thị kích thước FOV
+local FovLabel = Instance.new("TextLabel")
+FovLabel.Parent = FovFrame
+FovLabel.BackgroundTransparency = 1
+FovLabel.Position = UDim2.new(0, 26, 0, 0)
+FovLabel.Size = UDim2.new(0, 58, 1, 0)
+FovLabel.Font = Enum.Font.SourceSansBold
+FovLabel.Text = "FOV: " .. tostring(FOV_Radius)
+FovLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+FovLabel.TextSize = 12
+
+-- Nút Giảm FOV (-)
+local MinusBtn = Instance.new("TextButton")
+MinusBtn.Parent = FovFrame
+MinusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+MinusBtn.BorderSizePixel = 0
+MinusBtn.Position = UDim2.new(0, 3, 0, 3)
+MinusBtn.Size = UDim2.new(0, 22, 0, 26)
+MinusBtn.Font = Enum.Font.SourceSansBold
+MinusBtn.Text = "-"
+MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinusBtn.TextSize = 16
+
+local MinusCorner = Instance.new("UICorner")
+MinusCorner.CornerRadius = UDim.new(0, 4)
+MinusCorner.Parent = MinusBtn
+
+-- Nút Tăng FOV (+)
+local PlusBtn = Instance.new("TextButton")
+PlusBtn.Parent = FovFrame
+PlusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+PlusBtn.BorderSizePixel = 0
+PlusBtn.Position = UDim2.new(1, -25, 0, 3)
+PlusBtn.Size = UDim2.new(0, 22, 0, 26)
+PlusBtn.Font = Enum.Font.SourceSansBold
+PlusBtn.Text = "+"
+PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlusBtn.TextSize = 16
+
+local PlusCorner = Instance.new("UICorner")
+PlusCorner.CornerRadius = UDim.new(0, 4)
+PlusCorner.Parent = PlusBtn
+
+-- ================================================
+-- 3. XỬ LÝ SỰ KIỆN BẤM NÚT
+-- ================================================
+
+-- Bật / Tắt AIM
+AimToggleBtn.MouseButton1Click:Connect(function()
+    AIM_Enabled = not AIM_Enabled
+    if AIM_Enabled then
+        AimToggleBtn.BackgroundColor3 = Color3.fromRGB(230, 40, 40) -- BẬT: Đỏ
+        AimToggleBtn.Text = "AIM: ON"
+    else
+        AimToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 70) -- TẮT: Xanh lá
+        AimToggleBtn.Text = "AIM: OFF"
+    end
+end)
+
+-- Bấm giữ / Bấm tăng kích thước FOV
+PlusBtn.MouseButton1Click:Connect(function()
+    FOV_Radius = math.min(FOV_Radius + 15, 500) -- Tăng tối đa 500
+    FovLabel.Text = "FOV: " .. tostring(FOV_Radius)
+end)
+
+-- Bấm giữ / Bấm giảm kích thước FOV
+MinusBtn.MouseButton1Click:Connect(function()
+    FOV_Radius = math.max(FOV_Radius - 15, 20) -- Giảm tối thiểu 20
+    FovLabel.Text = "FOV: " .. tostring(FOV_Radius)
+end)
